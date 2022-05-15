@@ -5,6 +5,12 @@
 //   changeColor.style.backgroundColor = color;
 // });
 
+const ytRegex = /https:\/\/.*youtube.com\/(watch|live_chat)\?.*v=/;
+
+document.addEventListener('DOMContentLoaded', () => {
+
+});
+
 function updateRecordingStats(videoId, stats) {
   chrome.storage.sync.get('recording', ({ recording }) => {
     recording[videoId] = stats;
@@ -18,11 +24,15 @@ function stopRecord(videoId) {
   sendStats('stop', videoId);
 }
 
+function getVidId(url) {
+  const urlParse = new URL(url);
+  const urlParams = new URLSearchParams(urlParse.search);
+  return urlParams.get('v');
+}
+
 function executeWithVideoId(callback) {
   chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
-    const url = new URL(tabs[0].url);
-    const urlParams = new URLSearchParams(url.search);
-    const videoId = urlParams.get('v');
+    const videoId = getVidId(tabs[0].url);
     if (videoId != null) {
       callback(videoId);
       return true;
@@ -32,15 +42,12 @@ function executeWithVideoId(callback) {
 }
 
 function sendStats(stats, videoId) {
-  const xhr = new XMLHttpRequest();
-  xhr.open("GET", `http://localhost:5000/${stats}?v=${videoId}`, true)
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      var json = JSON.parse(xhr.responseText);
-      console.log(json);
+  chrome.runtime.sendMessage({
+    type: stats,
+    data: {
+      videoId
     }
-  };
-  xhr.send();
+  });
 }
 
 const messageBoard = document.querySelector('span#message-board');
@@ -83,12 +90,29 @@ executeWithVideoId((videoId) => {
 });
 
 tempButton.addEventListener('click', (e) => {
-  // chrome.storage.sync.get('recording', (result) => {
-  //   console.log(result);
-  // });
-  chrome.runtime.sendMessage({
-    type: 'Click',
-    msg: 'message'
+  chrome.tabs.query({
+    currentWindow: true
+  }, (tabs) => {
+    const selectElm = document.querySelector('#vid-list');
+    while (selectElm.firstElementChild) {
+      selectElm.firstElementChild.remove();
+    }
+    const youtubeTabList = [];
+    tabs.forEach(tab => {
+      if (ytRegex.test(tab.url)) {
+        console.log({tab});
+        const vidId = getVidId(tab.url);
+        if (!youtubeTabList.includes(vidId)) {
+          youtubeTabList.push(vidId);
+        }
+      }
+    });
+    youtubeTabList.forEach(vidId => {
+      const opt = document.createElement('option');
+      opt.value = vidId;
+      opt.innerText = vidId;
+      selectElm.appendChild(opt);
+    });
   });
 });
 
