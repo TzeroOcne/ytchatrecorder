@@ -86,6 +86,10 @@ tempButton.addEventListener('click', (e) => {
   // chrome.storage.sync.get('recording', (result) => {
   //   console.log(result);
   // });
+  chrome.runtime.sendMessage({
+    type: 'Click',
+    msg: 'message'
+  });
 });
 
 stopButton.addEventListener('click', (e) => {

@@ -8,9 +8,11 @@
     "content_scripts": [{
         "all_frames": true,
         "matches": [
-            "https://*.youtube.com/watch*"
+            "https://*.youtube.com/watch*",
+            "https://*.youtube.com/live_chat*"
         ],
         "js": [
+            "content-script.js"
         ],
         "run_at": "document_start"
     }],
